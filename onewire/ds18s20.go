@@ -9,8 +9,8 @@ import (
 )
 
 type DS18S20 struct {
-	Id string
-	fd *os.File
+	Id     string
+	fd     *os.File
 	reader *bufio.Reader
 }
 

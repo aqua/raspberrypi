@@ -32,4 +32,3 @@ func main() {
 		time.Sleep(time.Duration(*delay) * time.Millisecond)
 	}
 }
-
