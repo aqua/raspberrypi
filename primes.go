@@ -42,7 +42,7 @@ func main() {
 }
 
 func blink(g *gpio.GPIOLine, n uint) {
-	fmt.Printf("blinking %v time(s)", n)
+	fmt.Printf("blinking %v time(s)\n", n)
 	for i := uint(0); i < n; i++ {
 		g.SetState(true)
 		time.Sleep(time.Duration(*delay) * time.Millisecond)
