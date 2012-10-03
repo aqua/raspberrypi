@@ -5,26 +5,46 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"encoding/binary"
 	"strconv"
 )
 
 type DS18S20 struct {
-	Id     string
+	Id     uint64		// Actual 64-bit ID burned into chip
+	Name   string		// Name assigned by linux w1 drivers
 	fd     *os.File
 	reader *bufio.Reader
 }
 
-func NewDS18S20(id string) (*DS18S20, error) {
+func NewDS18S20(name string) (*DS18S20, error) {
 	device := new(DS18S20)
-	device.Id = id
+	device.Name = name
 
 	var err error
-	device.fd, err = os.OpenFile(fmt.Sprintf("/sys/bus/w1/devices/%v/w1_slave", device.Id), os.O_RDONLY|os.O_SYNC, 0666)
+	if device.Id, err = read_device_id(device); err != nil {
+		return nil, err
+	}
+	device.fd, err = os.OpenFile(fmt.Sprintf("/sys/bus/w1/devices/%v/w1_slave", device.Name), os.O_RDONLY|os.O_SYNC, 0666)
 	if err != nil {
 		return nil, err
 	}
 	device.reader = bufio.NewReader(device.fd)
 	return device, nil
+}
+
+func read_device_id(device *DS18S20) (uint64, error) {
+	fn := fmt.Sprintf("/sys/bus/w1/devices/%v/id", device.Name)
+	id_fd, err := os.OpenFile(fn, os.O_RDONLY, 0666)
+	if err != nil {
+		return 0, err
+	}
+	var ret uint64
+	err = binary.Read(id_fd, binary.BigEndian, &ret)
+	id_fd.Close()
+	if err != nil {
+		return 0, fmt.Errorf("Error decoding %v device id: %v", fn, err)
+	}
+	return ret, nil
 }
 
 var __CRC_CHECK_REGEX *regexp.Regexp = regexp.MustCompile(`crc=\w+\s(YES|NO)`)
