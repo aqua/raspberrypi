@@ -11,11 +11,11 @@ func ScanSlaves() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer devicedir.Close()
 	names, err := devicedir.Readdirnames(0)
 	if err != nil {
 		return nil, err
 	}
-	devicedir.Close()
 	r := make([]string, 0, len(names)-1)
 	for i := range names {
 		if ! strings.Contains(names[i], "w1_bus_master") {

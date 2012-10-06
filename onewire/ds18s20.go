@@ -38,9 +38,9 @@ func read_device_id(device *DS18S20) (uint64, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer id_fd.Close()
 	var ret uint64
-	err = binary.Read(id_fd, binary.BigEndian, &ret)
-	id_fd.Close()
+	err = binary.Read(id_fd, binary.LittleEndian, &ret)
 	if err != nil {
 		return 0, fmt.Errorf("Error decoding %v device id: %v", fn, err)
 	}
