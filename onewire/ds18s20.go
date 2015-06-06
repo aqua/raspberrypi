@@ -10,10 +10,31 @@ import (
 )
 
 type DS18S20 struct {
-	Id     uint64		// Actual 64-bit ID burned into chip
+	Id     uint64		// Actual 48-bit ID burned into chip
 	Name   string		// Name assigned by linux w1 drivers
+	FamilyCode	uint8   // Manufacturer-assigned family code
 	fd     *os.File
 	reader *bufio.Reader
+}
+
+const (
+	MODEL_DS18S20 = 0x10
+	MODEL_DS18B20 = 0x28
+)
+
+func (d *DS18S20) Model() string {
+	switch {
+		case d.FamilyCode == MODEL_DS18S20:
+			return "ds18s20"
+		case d.FamilyCode == MODEL_DS18B20:
+			return "ds18b20"
+	}
+	// Shouldn't get here, since we checked back in NewDS18S20
+	return ""
+}
+
+func (d *DS18S20) HumanId() string {
+	return fmt.Sprintf("%s-%012x", d.Model(), d.Id)
 }
 
 func NewDS18S20(name string) (*DS18S20, error) {
@@ -21,8 +42,11 @@ func NewDS18S20(name string) (*DS18S20, error) {
 	device.Name = name
 
 	var err error
-	if device.Id, err = read_device_id(device); err != nil {
+	if device.FamilyCode, device.Id, err = read_device_id(device); err != nil {
 		return nil, err
+	}
+	if device.Model() == "" {
+		return nil, fmt.Errorf("Unrecognized/unsupported 1-wire family code 0x%x", device.FamilyCode)
 	}
 	device.fd, err = os.OpenFile(fmt.Sprintf("/sys/bus/w1/devices/%v/w1_slave", device.Name), os.O_RDONLY|os.O_SYNC, 0666)
 	if err != nil {
@@ -32,19 +56,21 @@ func NewDS18S20(name string) (*DS18S20, error) {
 	return device, nil
 }
 
-func read_device_id(device *DS18S20) (uint64, error) {
+func read_device_id(device *DS18S20) (uint8, uint64, error) {
 	fn := fmt.Sprintf("/sys/bus/w1/devices/%v/id", device.Name)
 	id_fd, err := os.OpenFile(fn, os.O_RDONLY, 0666)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 	defer id_fd.Close()
-	var ret uint64
-	err = binary.Read(id_fd, binary.LittleEndian, &ret)
+	var romcode uint64
+	err = binary.Read(id_fd, binary.LittleEndian, &romcode)
 	if err != nil {
-		return 0, fmt.Errorf("Error decoding %v device id: %v", fn, err)
+		return 0, 0, fmt.Errorf("Error decoding %v device id: %v", fn, err)
 	}
-	return ret, nil
+	devicetype := uint8(romcode & 0xff)
+	id := (romcode & 0x00ffffffffffff00) >> 8
+	return devicetype, id, nil
 }
 
 var __CRC_CHECK_REGEX *regexp.Regexp = regexp.MustCompile(`crc=\w+\s(YES|NO)`)
