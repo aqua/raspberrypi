@@ -2,19 +2,27 @@ package onewire
 
 import (
 	"bufio"
+	"encoding/binary"
 	"fmt"
 	"os"
 	"regexp"
-	"encoding/binary"
 	"strconv"
 )
 
 type DS18S20 struct {
-	Id     uint64		// Actual 48-bit ID burned into chip
-	Name   string		// Name assigned by linux w1 drivers
-	FamilyCode	uint8   // Manufacturer-assigned family code
-	fd     *os.File
-	reader *bufio.Reader
+	Id         uint64 // Actual 48-bit ID burned into chip
+	Name       string // Name assigned by linux w1 drivers
+	FamilyCode uint8  // Manufacturer-assigned family code
+	fd         *os.File
+	reader     *bufio.Reader
+}
+
+func (d DS18S20) deviceReadFileName() string {
+	return linuxW1DevicePath + fmt.Sprintf("%s/w1_slave", d.Name)
+}
+
+func (d DS18S20) deviceIDFileName() string {
+	return linuxW1DevicePath + fmt.Sprintf("%s/id", d.Name)
 }
 
 const (
@@ -24,10 +32,10 @@ const (
 
 func (d *DS18S20) Model() string {
 	switch {
-		case d.FamilyCode == MODEL_DS18S20:
-			return "ds18s20"
-		case d.FamilyCode == MODEL_DS18B20:
-			return "ds18b20"
+	case d.FamilyCode == MODEL_DS18S20:
+		return "ds18s20"
+	case d.FamilyCode == MODEL_DS18B20:
+		return "ds18b20"
 	}
 	// Shouldn't get here, since we checked back in NewDS18S20
 	return ""
@@ -48,7 +56,7 @@ func NewDS18S20(name string) (*DS18S20, error) {
 	if device.Model() == "" {
 		return nil, fmt.Errorf("Unrecognized/unsupported 1-wire family code 0x%x", device.FamilyCode)
 	}
-	device.fd, err = os.OpenFile(fmt.Sprintf("/sys/bus/w1/devices/%v/w1_slave", device.Name), os.O_RDONLY|os.O_SYNC, 0666)
+	device.fd, err = os.OpenFile(device.deviceReadFileName(), os.O_RDONLY|os.O_SYNC, 0666)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +64,14 @@ func NewDS18S20(name string) (*DS18S20, error) {
 	return device, nil
 }
 
+func (d *DS18S20) Close() {
+	if d.fd != nil {
+		d.fd.Close()
+	}
+}
+
 func read_device_id(device *DS18S20) (uint8, uint64, error) {
-	fn := fmt.Sprintf("/sys/bus/w1/devices/%v/id", device.Name)
+	fn := device.deviceIDFileName()
 	id_fd, err := os.OpenFile(fn, os.O_RDONLY, 0666)
 	if err != nil {
 		return 0, 0, err
@@ -73,7 +87,7 @@ func read_device_id(device *DS18S20) (uint8, uint64, error) {
 	return devicetype, id, nil
 }
 
-var __CRC_CHECK_REGEX *regexp.Regexp = regexp.MustCompile(`crc=\w+\s(YES|NO)`)
+var __CRC_CHECK_REGEX *regexp.Regexp = regexp.MustCompile(`crc=[0-9a-f]+\s(YES|NO)`)
 var __TEMP_SAMPLE_REGEX *regexp.Regexp = regexp.MustCompile(`.*\st=(\d+)`)
 
 func (device *DS18S20) Read() (millidegrees int64, err error) {
@@ -102,5 +116,5 @@ func (device *DS18S20) Read() (millidegrees int64, err error) {
 			}
 		}
 	}
-	return 0., fmt.Errorf("Malformed/empty output from w1 slave")
+	return 0., fmt.Errorf("Malformed/empty output from w1 device")
 }
