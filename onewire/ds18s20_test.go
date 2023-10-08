@@ -14,7 +14,7 @@ var testDevices = []struct {
 	millidegrees int64
 }{
 	{"28-000003d44061", MODEL_DS18B20, "ds18b20", "ds18b20-000003d44061", false, 24812},
-	{"28-000003d44bad", MODEL_DS18B20, "ds18b20", "ds18b20-000003d44061", true, 0},
+	{"28-000003d44bad", MODEL_DS18B20, "ds18b20", "ds18b20-000003d44bad", true, 0},
 	{"28-000003d45c8f", MODEL_DS18B20, "ds18b20", "ds18b20-000003d45c8f", false, 25500},
 }
 

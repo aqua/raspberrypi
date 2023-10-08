@@ -14,7 +14,6 @@ type DS18S20 struct {
 	Name       string // Name assigned by linux w1 drivers
 	FamilyCode uint8  // Manufacturer-assigned family code
 	fd         *os.File
-	reader     *bufio.Reader
 }
 
 func (d DS18S20) deviceReadFileName() string {
@@ -60,7 +59,6 @@ func NewDS18S20(name string) (*DS18S20, error) {
 	if err != nil {
 		return nil, err
 	}
-	device.reader = bufio.NewReader(device.fd)
 	return device, nil
 }
 
@@ -91,18 +89,21 @@ var __CRC_CHECK_REGEX *regexp.Regexp = regexp.MustCompile(`crc=[0-9a-f]+\s(YES|N
 var __TEMP_SAMPLE_REGEX *regexp.Regexp = regexp.MustCompile(`.*\st=(\d+)`)
 
 func (device *DS18S20) Read() (millidegrees int64, err error) {
-	device.fd.Seek(0, 0)
+	if _, err := device.fd.Seek(0, os.SEEK_SET); err != nil {
+		return 0, fmt.Errorf("Unable to seek: %v", err)
+	}
+	reader := bufio.NewReader(device.fd)
 	for {
-		line, err := device.reader.ReadString('\n')
+		line, err := reader.ReadString('\n')
 		if err != nil {
-			return 0., err
+			return 0, err
 		} else if len(line) == 0 {
 			return 0., fmt.Errorf("EOF without data from w1")
 		} else {
 			// fmt.Printf("read from %v: %v", device.Id, line)
 			matches := __CRC_CHECK_REGEX.FindStringSubmatch(line)
 			if len(matches) > 0 && matches[1] != "YES" {
-				return 0., fmt.Errorf("CRC mismatch on read")
+				return 0., fmt.Errorf("CRC mismatch on read from %v", device.fd)
 			}
 
 			matches = __TEMP_SAMPLE_REGEX.FindStringSubmatch(line)
