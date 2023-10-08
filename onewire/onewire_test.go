@@ -1,13 +1,14 @@
 package onewire
 
 import (
+	"os"
 	"reflect"
 	"sort"
 	"testing"
 )
 
 func TestScan(t *testing.T) {
-	linuxW1DevicePath = "testdata/devices/"
+	os.Setenv("ONEWIRE_BUS_DEVICE_PATH", "testdata/devices/")
 	got, err := Scan()
 	if err != nil {
 		t.Errorf("got error in Scan(): %v", err)

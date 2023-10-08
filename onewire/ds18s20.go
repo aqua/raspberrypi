@@ -18,11 +18,11 @@ type DS18S20 struct {
 }
 
 func (d DS18S20) deviceReadFileName() string {
-	return linuxW1DevicePath + fmt.Sprintf("%s/w1_slave", d.Name)
+	return fmt.Sprintf("%s/%s/w1_slave", getW1DevicePath(), d.Name)
 }
 
 func (d DS18S20) deviceIDFileName() string {
-	return linuxW1DevicePath + fmt.Sprintf("%s/id", d.Name)
+	return fmt.Sprintf("%s/%s/id", getW1DevicePath(), d.Name)
 }
 
 const (

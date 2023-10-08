@@ -6,14 +6,21 @@ import (
 	"strings"
 )
 
+var deviceIDRE = regexp.MustCompile(`^[0-9a-f]{2}-[0-9a-f]+$`)
+
 var linuxW1DevicePath = "/sys/bus/w1/devices/"
 
-var deviceIDRE = regexp.MustCompile(`^[0-9a-f]{2}-[0-9a-f]+$`)
+func getW1DevicePath() string {
+	if p := os.Getenv("ONEWIRE_BUS_DEVICE_PATH"); p != "" {
+		return p
+	}
+	return linuxW1DevicePath
+}
 
 /* Find all 1-wire devices attached to bus masters */
 func Scan() ([]string, error) {
 	found := map[string]bool{}
-	devicedir, err := os.Open(linuxW1DevicePath)
+	devicedir, err := os.Open(getW1DevicePath())
 	if err != nil {
 		return nil, err
 	}

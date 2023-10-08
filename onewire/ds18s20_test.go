@@ -1,6 +1,7 @@
 package onewire
 
 import (
+	"os"
 	"testing"
 )
 
@@ -18,7 +19,7 @@ var testDevices = []struct {
 }
 
 func TestSetup(t *testing.T) {
-	linuxW1DevicePath = "testdata/devices/"
+	os.Setenv("ONEWIRE_BUS_DEVICE_PATH", "testdata/devices/")
 
 	for _, c := range testDevices {
 		d, err := NewDS18S20(c.name)
@@ -40,7 +41,7 @@ func TestSetup(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
-	linuxW1DevicePath = "testdata/devices/"
+	os.Setenv("ONEWIRE_BUS_DEVICE_PATH", "testdata/devices/")
 
 	for _, c := range testDevices {
 		d, err := NewDS18S20(c.name)
