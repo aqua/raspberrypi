@@ -7,8 +7,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"rpi/gpio"
 	"time"
+
+	"github.com/aqua/raspberrypi/gpio"
 )
 
 var gpio_num = flag.Uint("gpio", 4, "GPIO# to flash")
@@ -25,6 +26,7 @@ func main() {
 		return
 	}
 
+	defer g.Close()
 	count, n := uint(0), uint(2)
 	for {
 		if is_prime(n) {
@@ -38,7 +40,6 @@ func main() {
 		}
 		n++
 	}
-	g.Close()
 }
 
 func blink(g *gpio.GPIOLine, n uint) {
