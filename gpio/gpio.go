@@ -1,6 +1,7 @@
 package gpio
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 )
@@ -33,7 +34,7 @@ func NewGPIOLine(number uint, direction int) (gpio *GPIOLine, err error) {
 	if err != nil {
 		return nil, err
 	}
-	gpio.fd, err = os.OpenFile(fmt.Sprintf("%s/gpio%d/value", linuxGPIOPath(), gpio.Number), os.O_WRONLY|os.O_SYNC, 0666)
+	gpio.fd, err = os.OpenFile(fmt.Sprintf("%s/gpio%d/value", linuxGPIOPath(), gpio.Number), os.O_RDWR|os.O_SYNC, 0666)
 	if err != nil {
 		return nil, err
 	}
@@ -75,6 +76,23 @@ func (gpio *GPIOLine) SetState(state bool) error {
 	}
 	_, err := fmt.Fprintln(gpio.fd, v)
 	return err
+}
+
+func (gpio *GPIOLine) GetState() (bool, error) {
+	if _, err := gpio.fd.Seek(0, os.SEEK_SET); err != nil {
+		return false, err
+	}
+	scanner := bufio.NewScanner(gpio.fd)
+	t := ""
+	fmt.Println("reading")
+	for scanner.Scan() {
+		t = scanner.Text()
+		fmt.Println("read " + t)
+	}
+	if err := scanner.Err(); err != nil {
+		return false, err
+	}
+	return t != "0", nil
 }
 
 func (gpio *GPIOLine) Close() {
