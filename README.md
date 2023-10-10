@@ -1,4 +1,4 @@
-[![CI](https://github.com/aqua/raspberrypi/actions/workflows/go.yml/badge.svg)](https://github.com/aqua/raspberrypi/actions/workflows/ci.yml)
+[![CI](https://github.com/aqua/raspberrypi/actions/workflows/go.yml/badge.svg)](https://github.com/aqua/raspberrypi/actions/workflows/go.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/aqua/raspberrypi)](https://goreportcard.com/report/github.com/aqua/raspberrypi)
 [![Go Reference](https://pkg.go.dev/badge/github.com/aqua/raspberrypi.svg)](https://pkg.go.dev/github.com/aqua/raspberrypi)
 
