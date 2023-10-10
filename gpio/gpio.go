@@ -84,10 +84,8 @@ func (gpio *GPIOLine) GetState() (bool, error) {
 	}
 	scanner := bufio.NewScanner(gpio.fd)
 	t := ""
-	fmt.Println("reading")
 	for scanner.Scan() {
 		t = scanner.Text()
-		fmt.Println("read " + t)
 	}
 	if err := scanner.Err(); err != nil {
 		return false, err
