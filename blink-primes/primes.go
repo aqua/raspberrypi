@@ -54,6 +54,9 @@ func blink(g *gpio.GPIOLine, n uint) {
 
 // Totally non-optimal prime tester
 func is_prime(n uint) bool {
+	if n < 2 {
+		return false
+	}
 	for i := uint(2); i <= n/2; i++ {
 		if n%i == 0 {
 			return false
