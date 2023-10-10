@@ -15,6 +15,13 @@ const (
 	OUT
 )
 
+func linuxGPIOPath() string {
+	if p := os.Getenv("RPI_GPIO_PATH_OVERRIDE"); p != "" {
+		return p
+	}
+	return "/sys/class/gpio"
+}
+
 func NewGPIOLine(number uint, direction int) (gpio *GPIOLine, err error) {
 	gpio = new(GPIOLine)
 	gpio.Number = number
@@ -26,7 +33,7 @@ func NewGPIOLine(number uint, direction int) (gpio *GPIOLine, err error) {
 	if err != nil {
 		return nil, err
 	}
-	gpio.fd, err = os.OpenFile(fmt.Sprintf("/sys/class/gpio/gpio%d/value", gpio.Number), os.O_WRONLY|os.O_SYNC, 0666)
+	gpio.fd, err = os.OpenFile(fmt.Sprintf("%s/gpio%d/value", linuxGPIOPath(), gpio.Number), os.O_WRONLY|os.O_SYNC, 0666)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +41,7 @@ func NewGPIOLine(number uint, direction int) (gpio *GPIOLine, err error) {
 }
 
 func (gpio *GPIOLine) enable_export() error {
-	_, err := os.Stat(fmt.Sprintf("/sys/class/gpio/gpio%d", gpio.Number))
+	_, err := os.Stat(fmt.Sprintf("%s/gpio%d", linuxGPIOPath(), gpio.Number))
 	if err == nil {
 		// already exported
 		return nil
@@ -42,7 +49,7 @@ func (gpio *GPIOLine) enable_export() error {
 		// some other error
 		return err
 	}
-	fd, err := os.OpenFile("/sys/class/gpio/export", os.O_WRONLY|os.O_SYNC, 0666)
+	fd, err := os.OpenFile(fmt.Sprintf("%s/export", linuxGPIOPath()), os.O_WRONLY|os.O_SYNC, 0666)
 	if err != nil {
 		return err
 	}
@@ -51,7 +58,7 @@ func (gpio *GPIOLine) enable_export() error {
 }
 
 func (gpio *GPIOLine) SetDirection(direction int) error {
-	df, err := os.OpenFile(fmt.Sprintf("/sys/class/gpio/gpio%d/direction", gpio.Number),
+	df, err := os.OpenFile(fmt.Sprintf("%s/gpio%d/direction", linuxGPIOPath(), gpio.Number),
 		os.O_WRONLY|os.O_SYNC, 0666)
 	if err != nil {
 		return err
